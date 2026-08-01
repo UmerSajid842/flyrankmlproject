@@ -1,0 +1,910 @@
+# ML-03 — Frame Your Lane as an ML Task
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/UmerSajid842/flyrankmlproject/blob/main/work/notebooks/w02_ml_task_framing.ipynb?flush_cache=true)
+
+This skeleton is yours to fill. Work the sections **in order** — each one has a one-line hint. Simple words, honest numbers.
+
+> Working with an AI assistant? Tell it to read `skills/README.md` first and load the one skill this assignment names on its card.
+
+## 1. My lane as an ML task (type)
+
+*Classification, clustering, ranking, or scoring — which one, and why?*
+
+
+### Task Type: Ranking / Scoring
+
+My lane is **Content Refresh Prioritization**.
+
+The goal is to rank webpages according to how urgently they should be refreshed. Instead of predicting a simple yes/no answer, the system produces a priority score so SEO specialists know which pages should be updated first.
+
+Ranking is more appropriate than classification because pages can have different levels of priority rather than only "refresh" or "don't refresh".
+
+
+```python
+# This cell is for CODE (numbers, a query, a check).
+# Write your text answer in the cell ABOVE this one — typing sentences here breaks Run All.
+
+```
+
+## 2. Target or proxy
+
+*What would you predict? Where does that label come from — observed outcome or a defined rule?*
+
+
+
+The model will predict a **content refresh priority score**.
+
+This score is a proxy because the dataset does not contain a direct label saying whether a page should be refreshed.
+
+The score can be estimated using observed SEO signals such as:
+
+- impressions_90d
+- clicks_90d
+- ctr
+- avg_position
+- trend_direction
+- trend_pct
+
+These observed values help identify pages whose performance is declining.
+
+
+```python
+# This cell is for CODE (numbers, a query, a check).
+# Write your text answer in the cell ABOVE this one — typing sentences here breaks Run All.
+from pathlib import Path
+import pandas as pd
+
+candidate_paths = [
+    Path.cwd() / "data/raw/content_refresh_anonymized.csv",
+    Path.cwd().parent / "data/raw/content_refresh_anonymized.csv",
+    Path.cwd().parent.parent / "data/raw/content_refresh_anonymized.csv",
+]
+data_path = next((p for p in candidate_paths if p.exists()), None)
+if data_path is None:
+    raise FileNotFoundError("Starter data not found in the expected repo locations.")
+
+df = pd.read_csv(data_path)
+
+df[[
+    "impressions_90d",
+    "clicks_90d",
+    "ctr",
+    "avg_position",
+    "trend_direction",
+    "trend_pct"
+]].head()
+
+```
+
+
+
+
+
+  <div id="df-a65f8d4d-15d5-4daf-8d73-29f2c531767a" class="colab-df-container">
+    <div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>impressions_90d</th>
+      <th>clicks_90d</th>
+      <th>ctr</th>
+      <th>avg_position</th>
+      <th>trend_direction</th>
+      <th>trend_pct</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>3803</td>
+      <td>29</td>
+      <td>0.76</td>
+      <td>10.6</td>
+      <td>down</td>
+      <td>-41.4</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>15320</td>
+      <td>7</td>
+      <td>0.05</td>
+      <td>20.3</td>
+      <td>down</td>
+      <td>-57.7</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>12581</td>
+      <td>11</td>
+      <td>0.09</td>
+      <td>36.5</td>
+      <td>down</td>
+      <td>-60.9</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>11751</td>
+      <td>58</td>
+      <td>0.49</td>
+      <td>6.2</td>
+      <td>stable</td>
+      <td>-13.8</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>19140</td>
+      <td>24</td>
+      <td>0.13</td>
+      <td>44.0</td>
+      <td>down</td>
+      <td>-34.7</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+    <div class="colab-df-buttons">
+
+  <div class="colab-df-container">
+    <button class="colab-df-convert" onclick="convertToInteractive('df-a65f8d4d-15d5-4daf-8d73-29f2c531767a')"
+            title="Convert this dataframe to an interactive table."
+            style="display:none;">
+
+  <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960">
+    <path d="M120-120v-720h720v720H120Zm60-500h600v-160H180v160Zm220 220h160v-160H400v160Zm0 220h160v-160H400v160ZM180-400h160v-160H180v160Zm440 0h160v-160H620v160ZM180-180h160v-160H180v160Zm440 0h160v-160H620v160Z"/>
+  </svg>
+    </button>
+
+  <style>
+    .colab-df-container {
+      display:flex;
+      gap: 12px;
+    }
+
+    .colab-df-convert {
+      background-color: #E8F0FE;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: none;
+      fill: #1967D2;
+      height: 32px;
+      padding: 0 0 0 0;
+      width: 32px;
+    }
+
+    .colab-df-convert:hover {
+      background-color: #E2EBFA;
+      box-shadow: 0px 1px 2px rgba(60, 64, 67, 0.3), 0px 1px 3px 1px rgba(60, 64, 67, 0.15);
+      fill: #174EA6;
+    }
+
+    .colab-df-buttons div {
+      margin-bottom: 4px;
+    }
+
+    [theme=dark] .colab-df-convert {
+      background-color: #3B4455;
+      fill: #D2E3FC;
+    }
+
+    [theme=dark] .colab-df-convert:hover {
+      background-color: #434B5C;
+      box-shadow: 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+      filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.3));
+      fill: #FFFFFF;
+    }
+  </style>
+
+    <script>
+      const buttonEl =
+        document.querySelector('#df-a65f8d4d-15d5-4daf-8d73-29f2c531767a button.colab-df-convert');
+      buttonEl.style.display =
+        google.colab.kernel.accessAllowed ? 'block' : 'none';
+
+      async function convertToInteractive(key) {
+        const element = document.querySelector('#df-a65f8d4d-15d5-4daf-8d73-29f2c531767a');
+        const dataTable =
+          await google.colab.kernel.invokeFunction('convertToInteractive',
+                                                    [key], {});
+        if (!dataTable) return;
+
+        const docLinkHtml = 'Like what you see? Visit the ' +
+          '<a target="_blank" href=https://colab.research.google.com/notebooks/data_table.ipynb>data table notebook</a>'
+          + ' to learn more about interactive tables.';
+        element.innerHTML = '';
+        dataTable['output_type'] = 'display_data';
+        await google.colab.output.renderOutput(dataTable, element);
+        const docLink = document.createElement('div');
+        docLink.innerHTML = docLinkHtml;
+        element.appendChild(docLink);
+      }
+    </script>
+  </div>
+
+
+    </div>
+  </div>
+
+
+
+
+## 3. Success metric
+
+*One metric you can defend. What number means 'good'?*
+
+
+The success metric will be Precision@K.
+
+This metric measures how many of the top-ranked webpages actually deserve a content refresh.
+
+A higher Precision@K means the model is recommending useful pages for SEO specialists to review first.
+
+
+```python
+# This cell is for CODE (numbers, a query, a check).
+# Write your text answer in the cell ABOVE this one — typing sentences here breaks Run All.
+df[["ctr", "avg_position"]].describe()
+```
+
+
+
+
+
+  <div id="df-41e64093-10c1-4f80-a879-9becc3d3c8c6" class="colab-df-container">
+    <div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>ctr</th>
+      <th>avg_position</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>count</th>
+      <td>30000.000000</td>
+      <td>30000.00000</td>
+    </tr>
+    <tr>
+      <th>mean</th>
+      <td>0.510733</td>
+      <td>16.34238</td>
+    </tr>
+    <tr>
+      <th>std</th>
+      <td>3.279162</td>
+      <td>15.21679</td>
+    </tr>
+    <tr>
+      <th>min</th>
+      <td>0.000000</td>
+      <td>0.00000</td>
+    </tr>
+    <tr>
+      <th>25%</th>
+      <td>0.000000</td>
+      <td>6.20000</td>
+    </tr>
+    <tr>
+      <th>50%</th>
+      <td>0.070000</td>
+      <td>10.80000</td>
+    </tr>
+    <tr>
+      <th>75%</th>
+      <td>0.290000</td>
+      <td>22.30000</td>
+    </tr>
+    <tr>
+      <th>max</th>
+      <td>100.000000</td>
+      <td>245.00000</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+    <div class="colab-df-buttons">
+
+  <div class="colab-df-container">
+    <button class="colab-df-convert" onclick="convertToInteractive('df-41e64093-10c1-4f80-a879-9becc3d3c8c6')"
+            title="Convert this dataframe to an interactive table."
+            style="display:none;">
+
+  <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960">
+    <path d="M120-120v-720h720v720H120Zm60-500h600v-160H180v160Zm220 220h160v-160H400v160Zm0 220h160v-160H400v160ZM180-400h160v-160H180v160Zm440 0h160v-160H620v160ZM180-180h160v-160H180v160Zm440 0h160v-160H620v160Z"/>
+  </svg>
+    </button>
+
+  <style>
+    .colab-df-container {
+      display:flex;
+      gap: 12px;
+    }
+
+    .colab-df-convert {
+      background-color: #E8F0FE;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: none;
+      fill: #1967D2;
+      height: 32px;
+      padding: 0 0 0 0;
+      width: 32px;
+    }
+
+    .colab-df-convert:hover {
+      background-color: #E2EBFA;
+      box-shadow: 0px 1px 2px rgba(60, 64, 67, 0.3), 0px 1px 3px 1px rgba(60, 64, 67, 0.15);
+      fill: #174EA6;
+    }
+
+    .colab-df-buttons div {
+      margin-bottom: 4px;
+    }
+
+    [theme=dark] .colab-df-convert {
+      background-color: #3B4455;
+      fill: #D2E3FC;
+    }
+
+    [theme=dark] .colab-df-convert:hover {
+      background-color: #434B5C;
+      box-shadow: 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+      filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.3));
+      fill: #FFFFFF;
+    }
+  </style>
+
+    <script>
+      const buttonEl =
+        document.querySelector('#df-41e64093-10c1-4f80-a879-9becc3d3c8c6 button.colab-df-convert');
+      buttonEl.style.display =
+        google.colab.kernel.accessAllowed ? 'block' : 'none';
+
+      async function convertToInteractive(key) {
+        const element = document.querySelector('#df-41e64093-10c1-4f80-a879-9becc3d3c8c6');
+        const dataTable =
+          await google.colab.kernel.invokeFunction('convertToInteractive',
+                                                    [key], {});
+        if (!dataTable) return;
+
+        const docLinkHtml = 'Like what you see? Visit the ' +
+          '<a target="_blank" href=https://colab.research.google.com/notebooks/data_table.ipynb>data table notebook</a>'
+          + ' to learn more about interactive tables.';
+        element.innerHTML = '';
+        dataTable['output_type'] = 'display_data';
+        await google.colab.output.renderOutput(dataTable, element);
+        const docLink = document.createElement('div');
+        docLink.innerHTML = docLinkHtml;
+        element.appendChild(docLink);
+      }
+    </script>
+  </div>
+
+
+    </div>
+  </div>
+
+
+
+
+## 4. The unit of analysis, as a real dataframe
+
+*Load your lane's slice and show it: one row = one what?*
+## 4. The Unit of Analysis
+
+The unit of analysis is one webpage.
+
+Each row in the dataset represents one webpage and contains SEO metrics, engagement metrics, content characteristics, and trend information.
+
+The model makes one prediction for each webpage.
+
+
+```python
+# This cell is for CODE (numbers, a query, a check).
+# Write your text answer in the cell ABOVE this one — typing sentences here breaks Run All.
+print("Dataset Shape:", df.shape)
+
+df.head()
+
+```
+
+    Dataset Shape: (30000, 44)
+    
+
+
+
+
+
+  <div id="df-f07b686e-52e9-441f-af79-7739ecf0da41" class="colab-df-container">
+    <div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>content_id</th>
+      <th>client_id</th>
+      <th>search_volume</th>
+      <th>competition</th>
+      <th>competition_level</th>
+      <th>cpc</th>
+      <th>content_type</th>
+      <th>main_intent</th>
+      <th>word_count</th>
+      <th>char_count</th>
+      <th>...</th>
+      <th>char_count_tier</th>
+      <th>ctr</th>
+      <th>avg_position</th>
+      <th>engagement_rate</th>
+      <th>scroll_rate</th>
+      <th>ai_traffic_pct</th>
+      <th>impression_tier</th>
+      <th>position_tier</th>
+      <th>trend_direction</th>
+      <th>trend_pct</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>content_304f48230142</td>
+      <td>client_f369cb89fc</td>
+      <td>10.0</td>
+      <td>0.67</td>
+      <td>HIGH</td>
+      <td>2.05</td>
+      <td>keyword article</td>
+      <td>transactional</td>
+      <td>3221.0</td>
+      <td>20457.0</td>
+      <td>...</td>
+      <td>15000-25000</td>
+      <td>0.76</td>
+      <td>10.6</td>
+      <td>5.88</td>
+      <td>4.55</td>
+      <td>0.0</td>
+      <td>good</td>
+      <td>striking</td>
+      <td>down</td>
+      <td>-41.4</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>content_a1fb4e703a9e</td>
+      <td>client_4e07408562</td>
+      <td>90.0</td>
+      <td>0.01</td>
+      <td>LOW</td>
+      <td>0.05</td>
+      <td>keyword article</td>
+      <td>informational</td>
+      <td>2481.0</td>
+      <td>15562.0</td>
+      <td>...</td>
+      <td>15000-25000</td>
+      <td>0.05</td>
+      <td>20.3</td>
+      <td>0.00</td>
+      <td>10.00</td>
+      <td>0.0</td>
+      <td>good</td>
+      <td>page_3_5</td>
+      <td>down</td>
+      <td>-57.7</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>content_9aa793d4d895</td>
+      <td>client_7f2253d7e2</td>
+      <td>0.0</td>
+      <td>0.00</td>
+      <td>LOW</td>
+      <td>0.00</td>
+      <td>keyword article</td>
+      <td>informational</td>
+      <td>3515.0</td>
+      <td>23643.0</td>
+      <td>...</td>
+      <td>15000-25000</td>
+      <td>0.09</td>
+      <td>36.5</td>
+      <td>0.00</td>
+      <td>28.57</td>
+      <td>0.0</td>
+      <td>good</td>
+      <td>page_3_5</td>
+      <td>down</td>
+      <td>-60.9</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>content_331d6c4de07b</td>
+      <td>client_19581e27de</td>
+      <td>10.0</td>
+      <td>0.00</td>
+      <td>LOW</td>
+      <td>0.00</td>
+      <td>keyword article</td>
+      <td>commercial</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>...</td>
+      <td>NaN</td>
+      <td>0.49</td>
+      <td>6.2</td>
+      <td>1.28</td>
+      <td>3.45</td>
+      <td>0.0</td>
+      <td>good</td>
+      <td>page_1</td>
+      <td>stable</td>
+      <td>-13.8</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>content_d99b7a2d90ca</td>
+      <td>client_3fdba35f04</td>
+      <td>0.0</td>
+      <td>0.00</td>
+      <td>LOW</td>
+      <td>0.00</td>
+      <td>keyword article</td>
+      <td>informational</td>
+      <td>2803.0</td>
+      <td>17469.0</td>
+      <td>...</td>
+      <td>15000-25000</td>
+      <td>0.13</td>
+      <td>44.0</td>
+      <td>0.00</td>
+      <td>24.29</td>
+      <td>0.0</td>
+      <td>good</td>
+      <td>page_3_5</td>
+      <td>down</td>
+      <td>-34.7</td>
+    </tr>
+  </tbody>
+</table>
+<p>5 rows × 44 columns</p>
+</div>
+    <div class="colab-df-buttons">
+
+  <div class="colab-df-container">
+    <button class="colab-df-convert" onclick="convertToInteractive('df-f07b686e-52e9-441f-af79-7739ecf0da41')"
+            title="Convert this dataframe to an interactive table."
+            style="display:none;">
+
+  <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960">
+    <path d="M120-120v-720h720v720H120Zm60-500h600v-160H180v160Zm220 220h160v-160H400v160Zm0 220h160v-160H400v160ZM180-400h160v-160H180v160Zm440 0h160v-160H620v160ZM180-180h160v-160H180v160Zm440 0h160v-160H620v160Z"/>
+  </svg>
+    </button>
+
+  <style>
+    .colab-df-container {
+      display:flex;
+      gap: 12px;
+    }
+
+    .colab-df-convert {
+      background-color: #E8F0FE;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: none;
+      fill: #1967D2;
+      height: 32px;
+      padding: 0 0 0 0;
+      width: 32px;
+    }
+
+    .colab-df-convert:hover {
+      background-color: #E2EBFA;
+      box-shadow: 0px 1px 2px rgba(60, 64, 67, 0.3), 0px 1px 3px 1px rgba(60, 64, 67, 0.15);
+      fill: #174EA6;
+    }
+
+    .colab-df-buttons div {
+      margin-bottom: 4px;
+    }
+
+    [theme=dark] .colab-df-convert {
+      background-color: #3B4455;
+      fill: #D2E3FC;
+    }
+
+    [theme=dark] .colab-df-convert:hover {
+      background-color: #434B5C;
+      box-shadow: 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+      filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.3));
+      fill: #FFFFFF;
+    }
+  </style>
+
+    <script>
+      const buttonEl =
+        document.querySelector('#df-f07b686e-52e9-441f-af79-7739ecf0da41 button.colab-df-convert');
+      buttonEl.style.display =
+        google.colab.kernel.accessAllowed ? 'block' : 'none';
+
+      async function convertToInteractive(key) {
+        const element = document.querySelector('#df-f07b686e-52e9-441f-af79-7739ecf0da41');
+        const dataTable =
+          await google.colab.kernel.invokeFunction('convertToInteractive',
+                                                    [key], {});
+        if (!dataTable) return;
+
+        const docLinkHtml = 'Like what you see? Visit the ' +
+          '<a target="_blank" href=https://colab.research.google.com/notebooks/data_table.ipynb>data table notebook</a>'
+          + ' to learn more about interactive tables.';
+        element.innerHTML = '';
+        dataTable['output_type'] = 'display_data';
+        await google.colab.output.renderOutput(dataTable, element);
+        const docLink = document.createElement('div');
+        docLink.innerHTML = docLinkHtml;
+        element.appendChild(docLink);
+      }
+    </script>
+  </div>
+
+
+    </div>
+  </div>
+
+
+
+
+## 5. Why ML beats a fixed rule here
+
+*What makes the pattern too messy for an if-statement?*
+## 5. Why ML beats a fixed rule here
+
+A fixed rule such as "refresh every page with CTR below 1%" is too simple because webpage performance depends on many factors.
+
+Machine learning can consider multiple signals together, including impressions, clicks, CTR, search position, search volume, content age, and performance trends.
+
+Using many features together allows the model to identify pages that should be refreshed more accurately than a single rule.
+
+
+```python
+# This cell is for CODE (numbers, a query, a check).
+# Write your text answer in the cell ABOVE this one — typing sentences here breaks Run All.
+important_features = [
+    "search_volume",
+    "impressions_90d",
+    "clicks_90d",
+    "ctr",
+    "avg_position",
+    "content_age_days",
+    "trend_direction"
+]
+
+df[important_features].head()
+
+```
+
+
+
+
+
+  <div id="df-789250d7-2690-4510-b4ce-f94f4005f55d" class="colab-df-container">
+    <div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>search_volume</th>
+      <th>impressions_90d</th>
+      <th>clicks_90d</th>
+      <th>ctr</th>
+      <th>avg_position</th>
+      <th>content_age_days</th>
+      <th>trend_direction</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>10.0</td>
+      <td>3803</td>
+      <td>29</td>
+      <td>0.76</td>
+      <td>10.6</td>
+      <td>187</td>
+      <td>down</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>90.0</td>
+      <td>15320</td>
+      <td>7</td>
+      <td>0.05</td>
+      <td>20.3</td>
+      <td>445</td>
+      <td>down</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>0.0</td>
+      <td>12581</td>
+      <td>11</td>
+      <td>0.09</td>
+      <td>36.5</td>
+      <td>141</td>
+      <td>down</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>10.0</td>
+      <td>11751</td>
+      <td>58</td>
+      <td>0.49</td>
+      <td>6.2</td>
+      <td>463</td>
+      <td>stable</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>0.0</td>
+      <td>19140</td>
+      <td>24</td>
+      <td>0.13</td>
+      <td>44.0</td>
+      <td>263</td>
+      <td>down</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+    <div class="colab-df-buttons">
+
+  <div class="colab-df-container">
+    <button class="colab-df-convert" onclick="convertToInteractive('df-789250d7-2690-4510-b4ce-f94f4005f55d')"
+            title="Convert this dataframe to an interactive table."
+            style="display:none;">
+
+  <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960">
+    <path d="M120-120v-720h720v720H120Zm60-500h600v-160H180v160Zm220 220h160v-160H400v160Zm0 220h160v-160H400v160ZM180-400h160v-160H180v160Zm440 0h160v-160H620v160ZM180-180h160v-160H180v160Zm440 0h160v-160H620v160Z"/>
+  </svg>
+    </button>
+
+  <style>
+    .colab-df-container {
+      display:flex;
+      gap: 12px;
+    }
+
+    .colab-df-convert {
+      background-color: #E8F0FE;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: none;
+      fill: #1967D2;
+      height: 32px;
+      padding: 0 0 0 0;
+      width: 32px;
+    }
+
+    .colab-df-convert:hover {
+      background-color: #E2EBFA;
+      box-shadow: 0px 1px 2px rgba(60, 64, 67, 0.3), 0px 1px 3px 1px rgba(60, 64, 67, 0.15);
+      fill: #174EA6;
+    }
+
+    .colab-df-buttons div {
+      margin-bottom: 4px;
+    }
+
+    [theme=dark] .colab-df-convert {
+      background-color: #3B4455;
+      fill: #D2E3FC;
+    }
+
+    [theme=dark] .colab-df-convert:hover {
+      background-color: #434B5C;
+      box-shadow: 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+      filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.3));
+      fill: #FFFFFF;
+    }
+  </style>
+
+    <script>
+      const buttonEl =
+        document.querySelector('#df-789250d7-2690-4510-b4ce-f94f4005f55d button.colab-df-convert');
+      buttonEl.style.display =
+        google.colab.kernel.accessAllowed ? 'block' : 'none';
+
+      async function convertToInteractive(key) {
+        const element = document.querySelector('#df-789250d7-2690-4510-b4ce-f94f4005f55d');
+        const dataTable =
+          await google.colab.kernel.invokeFunction('convertToInteractive',
+                                                    [key], {});
+        if (!dataTable) return;
+
+        const docLinkHtml = 'Like what you see? Visit the ' +
+          '<a target="_blank" href=https://colab.research.google.com/notebooks/data_table.ipynb>data table notebook</a>'
+          + ' to learn more about interactive tables.';
+        element.innerHTML = '';
+        dataTable['output_type'] = 'display_data';
+        await google.colab.output.renderOutput(dataTable, element);
+        const docLink = document.createElement('div');
+        docLink.innerHTML = docLinkHtml;
+        element.appendChild(docLink);
+      }
+    </script>
+  </div>
+
+
+    </div>
+  </div>
+
+
+
+
+## Self-check
+
+Before you submit, confirm each line honestly:
+
+- [ ] Every section above is filled — markdown thinking AND the code that backs it
+- [ ] The notebook runs top to bottom with no errors (Runtime → Run all)
+- [ ] No client names, URLs, or private queries anywhere
+- [ ] My claims use careful words: observed, measured, directional, decision-support
+- [ ] Committed to my repo under `work/notebooks/` — then submit your repo URL on the card. Done.
