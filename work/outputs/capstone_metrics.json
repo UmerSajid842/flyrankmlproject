@@ -1,0 +1,62 @@
+{
+  "analysis_name": "Leakage-aware decline prioritization",
+  "data": {
+    "rows": 30000,
+    "clients": 32
+  },
+  "split": {
+    "method": "GroupShuffleSplit by client_id",
+    "random_state": 42,
+    "train_rows": 23837,
+    "test_rows": 6163,
+    "train_clients": 25,
+    "held_out_clients": 7
+  },
+  "target": "trend_direction == 'down' (a current-snapshot decline proxy)",
+  "base_rate_test": 0.5109524582184002,
+  "model_metrics": {
+    "roc_auc": 0.6594833826181746,
+    "average_precision": 0.6155919465321285,
+    "precision_at_50": 0.54,
+    "precision_at_100": 0.46,
+    "precision_at_threshold_0_50": 0.6187270501835985
+  },
+  "baseline_metrics": {
+    "precision_at_50": 0.34,
+    "precision_at_100": 0.34
+  },
+  "feature_policy": {
+    "included": [
+      "search_volume",
+      "competition",
+      "cpc",
+      "word_count",
+      "char_count",
+      "log_impressions_prev_30d",
+      "log_clicks_prev_30d",
+      "log_sessions_prev_30d",
+      "content_age_days",
+      "days_since_last_update",
+      "competition_level",
+      "content_type",
+      "main_intent",
+      "age_tier",
+      "freshness_tier",
+      "word_count_tier",
+      "char_count_tier"
+    ],
+    "excluded": [
+      "content_id",
+      "client_id",
+      "trend_direction",
+      "trend_pct",
+      "is_declining_label",
+      "impressions_last_30d",
+      "clicks_last_30d",
+      "sessions_last_30d",
+      "all 90-day traffic totals and derived rates",
+      "provider_used",
+      "model_used"
+    ]
+  }
+}
