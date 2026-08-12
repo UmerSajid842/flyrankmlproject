@@ -1,8 +1,8 @@
-# FL-01 — AI Workflow Audit and Tool Setup
+﻿# FL-01 — AI Workflow Audit and Tool Setup
 
 **Intern:** Umer Sajid  
 **Track:** General AI Fluency  
-**Status:** Drafted audit. The required real account, course, and Claude Project evidence is still pending.
+**Status:** Committed to GitHub on Aug 12, 2026 — commit `ef7bc72` at [`https://github.com/UmerSajid842/flyrankmlproject`](https://github.com/UmerSajid842/flyrankmlproject). The audit is complete; the required real account, course, and Claude Project evidence is still pending.
 
 ## Purpose and boundary
 
@@ -60,3 +60,4 @@ The FL-01 card requires evidence of Claude and ChatGPT accounts, Anthropic Acade
 [1] [Ethan Mollick, “On-boarding your AI Intern”](https://www.oneusefulthing.org/p/on-boarding-your-ai-intern)  
 [2] [Anthropic Academy, “AI Fluency: Framework & Foundations”](https://anthropic.skilljar.com/ai-fluency-framework-foundations)  
 [3] [Claude Help Center, “What are projects?”](https://support.claude.com/en/articles/9517075-what-are-projects)
+
