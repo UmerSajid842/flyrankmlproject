@@ -3,19 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="A leakage-aware content decline prioritisation capstone using the anonymised FlyRank ML Internship starter dataset.">
-  <title>Content Decline Prioritisation | FlyRank Capstone</title>
+  <meta name="description" content="A leakage-aware, client-held-out FlyRank ML Internship capstone on content refresh prioritisation.">
+  <title>Content Refresh Prioritisation | FlyRank Capstone</title>
   <style>
     :root { --ink:#132234; --muted:#5d6b7a; --line:#dce5ec; --paper:#ffffff; --ground:#f5f8fa; --blue:#0e6098; --blue-dark:#0a3e63; --accent:#e9942d; --soft:#e8f3fa; }
     * { box-sizing:border-box; }
     html { scroll-behavior:smooth; }
-    body { margin:0; background:var(--ground); color:var(--ink); font:17px/1.65 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body { margin:0; background:var(--ground); color:var(--ink); font:17px/1.65 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
     a { color:var(--blue); text-underline-offset:3px; }
     a:hover { color:var(--blue-dark); }
     .hero { background:linear-gradient(135deg,#082e4a,#0e6098 56%,#2382b5); color:white; padding:68px 24px 50px; }
-    .hero-inner, main, .footer-inner { max-width:1040px; margin:0 auto; }
+    .hero-inner,main,.footer-inner { max-width:1040px; margin:0 auto; }
     .eyebrow { margin:0 0 13px; color:#bce9ff; font-size:.78rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
-    h1 { max-width:900px; margin:0; font-family:Georgia, "Times New Roman", serif; font-size:clamp(2.25rem,6vw,4.4rem); line-height:1.07; letter-spacing:-.035em; }
+    h1 { max-width:900px; margin:0; font-family:Georgia,"Times New Roman",serif; font-size:clamp(2.25rem,6vw,4.4rem); line-height:1.07; letter-spacing:-.035em; }
     .subtitle { max-width:780px; margin:22px 0 0; font-size:1.16rem; color:#e7f6ff; }
     .meta { display:flex; flex-wrap:wrap; gap:8px 18px; margin-top:28px; font-size:.92rem; color:#c7eafa; }
     nav { background:#fff; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:10; }
@@ -23,7 +23,7 @@
     nav a { color:var(--ink); text-decoration:none; font-weight:700; }
     main { background:var(--paper); padding:45px 68px 68px; box-shadow:0 2px 18px rgba(13,43,62,.08); }
     section { margin:0 0 48px; }
-    h2 { margin:0 0 14px; font:700 clamp(1.65rem,3vw,2.2rem)/1.15 Georgia, "Times New Roman", serif; color:var(--blue-dark); }
+    h2 { margin:0 0 14px; font:700 clamp(1.65rem,3vw,2.2rem)/1.15 Georgia,"Times New Roman",serif; color:var(--blue-dark); }
     h3 { margin:24px 0 8px; font-size:1.1rem; }
     p { margin:0 0 16px; }
     .lede { font-size:1.08rem; color:#293c4d; }
@@ -55,43 +55,56 @@
       <p class="eyebrow">FlyRank ML Internship · Capstone Research Paper</p>
       <h1>Can Prior-Window Signals Improve Content Refresh Prioritisation?</h1>
       <p class="subtitle">A leakage-aware, client-held-out evaluation of a review queue for potentially declining content pages.</p>
-      <div class="meta"><span>By Umer Sajid</span><span>Content Refresh Prioritization lane</span><span>12 August 2026</span></div>
+      <div class="meta"><span>By Umer Sajid</span><span>Refresh / Content Opportunity Scoring lane</span><span>12 August 2026</span></div>
     </div>
   </header>
-  <nav aria-label="Section navigation"><div class="nav-inner"><a href="#abstract">Abstract</a><a href="#problem">Problem</a><a href="#data">Data &amp; method</a><a href="#results">Results</a><a href="#interpretation">Interpretation</a><a href="#limits">Limitations</a><a href="#recommendation">Recommendation</a><a href="#reproduce">Reproduce</a></div></nav>
+  <nav aria-label="Section navigation"><div class="nav-inner"><a href="#abstract">Abstract</a><a href="#problem">Problem</a><a href="#data">Data</a><a href="#method">Method</a><a href="#results">Results</a><a href="#limits">Limitations</a><a href="#recommendations">Recommendations</a><a href="#reproduce">Reproduce</a><a href="#acknowledgements">Credit</a></div></nav>
   <main>
     <section id="abstract">
       <h2>Abstract</h2>
-      <p class="lede">This project asks whether an SEO or content editor can use page context and prior-month signals to prioritise a review queue for potentially declining content. It uses an anonymised snapshot of <strong>30,000 content pages</strong> across <strong>32 pseudonymised clients</strong> and evaluates a leakage-aware model on seven entirely held-out clients. The model reached <strong>Precision@50 = 0.540</strong>, compared with <strong>0.340</strong> for a transparent visibility, freshness, and content-thinness baseline. Because the held-out decline base rate is already 0.511, this is a modest prioritisation improvement—not an automated-action threshold, a causal estimate, or a prediction of Google’s algorithm.</p>
-      <div class="callout"><strong>Decision supported:</strong> which pages should an editor review first when refresh capacity is constrained? The result is a ranked review queue; a human remains responsible for diagnosis and action.</div>
+      <p class="lede">This capstone asks whether an SEO or content editor can use page context and prior-month signals to prioritise a review queue for potentially declining content. It uses the bundled anonymised FlyRank ML Internship starter release, a 30,000-page snapshot across 32 pseudonymised clients, and evaluates transfer on seven entirely held-out clients. A leakage-aware random-forest model uses only stable or prior-window signals and is compared with a transparent visibility, freshness, and content-thinness baseline on the same test split. The model achieved <strong>Precision@50 = 0.540</strong> versus <strong>0.340</strong> for the baseline, although the held-out decline base rate of 0.511 means this is a modest prioritisation result rather than an automated-action threshold. The output is a ranked <strong>review-for-refresh</strong> queue for directional decision support, not a causal estimate, a guarantee of traffic recovery, or a claim about Google’s algorithm.</p>
     </section>
 
     <section id="problem">
-      <h2>1. Problem framing</h2>
-      <p>Content teams often have more ageing pages than they can refresh. A simple heuristic can flag stale pages, but it may overlook the combination of prior visibility, content age, freshness, and search context that makes a page worth investigating. This capstone studies one narrow operational decision: which pages should appear first in an editor’s limited review queue?</p>
-      <p>The unit of analysis is one pseudonymised content page. The target is an <strong>observed current-snapshot decline proxy</strong>: <code>trend_direction == "down"</code>, defined in the starter dataset as the latest 30 days of impressions being more than 20% below the preceding 30 days. The primary score is Precision@50 on clients unseen during training, reported next to the target prevalence so the result stays in context.</p>
+      <h2>1. Introduction and problem statement</h2>
+      <p>Content teams often have more ageing pages than they can review in one editorial cycle. This capstone supports a single operational decision: <strong>which pages should an editor investigate first when refresh capacity is limited?</strong> The unit of analysis is one pseudonymised content page, and the output is a ranked review queue rather than an automated intervention. A false positive spends editorial capacity; a false negative leaves a potentially declining page outside the first review batch.</p>
+      <p>The target is an <strong>observed current-snapshot decline proxy</strong>: <code>trend_direction == "down"</code>. In the starter release, that means impressions in the most recent 30 days are more than 20% below the preceding 30 days. The primary score is Precision@50 on clients unseen during training, reported with the test-set prevalence so the result remains interpretable.</p>
     </section>
 
     <section id="data">
-      <h2>2. Data and methodology</h2>
-      <p>The analysis uses only the repository’s bundled anonymised starter dataset. It contains no client names, domains, URLs, page titles, or private queries. Pseudonymous IDs are used only for output reference and client-grouped evaluation; they are never model features.</p>
+      <h2>2. Data and public-safety boundary</h2>
+      <p>The analysis uses only the repository’s bundled anonymised starter release: <code>data/raw/content_refresh_anonymized.csv</code>. It is one denormalised snapshot table with <strong>30,000 content-page rows, 44 columns, and 32 pseudonymised clients</strong>. All activity totals cover a trailing 90-day export window; <code>*_prev_30d</code> is days 31–60 before export and <code>*_last_30d</code> is the most recent 30 days. This capstone does not use the separate full warehouse release or raw client exports. <a href="https://github.com/UmerSajid842/flyrankmlproject/blob/main/docs/data-dictionary.md">See the data dictionary.</a></p>
       <table>
-        <thead><tr><th>Design choice</th><th>Implementation</th><th>Why it matters</th></tr></thead>
+        <thead><tr><th>Data choice</th><th>Capstone treatment</th><th>Why it matters</th></tr></thead>
         <tbody>
-          <tr><td>Evaluation split</td><td><code>GroupShuffleSplit</code>, 20% test set, seed 42</td><td>All pages for seven clients are held out, testing whether the approach transfers beyond clients seen in training.</td></tr>
-          <tr><td>Target</td><td><code>trend_direction == "down"</code></td><td>Defines a current-snapshot decline proxy; it is never used as an input.</td></tr>
-          <tr><td>Feature policy</td><td>Prior-30-day activity; page age/freshness; content/search context</td><td>Uses information that precedes or does not overlap the outcome window.</td></tr>
-          <tr><td>Leakage exclusions</td><td>Label fields, latest-30-day signals, 90-day totals/rates, IDs, provider/model metadata</td><td>Prevents direct target leakage and overlap with the outcome period.</td></tr>
-          <tr><td>Model</td><td>Random forest, 300 trees, class balancing, missingness-aware preprocessing</td><td>Captures non-linear combinations while retaining a reproducible specification.</td></tr>
-          <tr><td>Baseline</td><td>50% prior visibility + 30% staleness + 20% thinness</td><td>Provides a transparent label-free comparison on the same test pages.</td></tr>
+          <tr><td>IDs</td><td>Pseudonymous IDs are used only for grouped evaluation and local output reference</td><td>They are never model features</td></tr>
+          <tr><td>Eligible signals</td><td>Prior-30-day activity; age/freshness; safe content and search context</td><td>They precede or do not overlap the outcome window</td></tr>
+          <tr><td>Excluded signals</td><td>Label fields, latest-30-day activity, 90-day totals/rates, and provider/model metadata</td><td>Prevents direct leakage and outcome-window overlap</td></tr>
+          <tr><td>Missing data</td><td>Median numeric imputation with missingness flags; explicit categorical <code>missing</code></td><td>Missing measurement is not silently converted into a genuine zero</td></tr>
         </tbody>
       </table>
-      <p>Numeric missing values are median-imputed with missingness indicators. Categorical missing values are explicitly represented as <code>missing</code>; no missing measurement is silently converted to zero.</p>
+      <p>No client names, domains, live URLs, page titles, private queries, credentials, or raw exports are included in the report or its public assets.</p>
+    </section>
+
+    <section id="method">
+      <h2>3. Methodology</h2>
+      <p>The approach assumes that prior visibility, freshness, content age, content characteristics, and safe search context can help triage pages for review. It does not assume that those signals cause a decline or that a refresh will restore traffic. Numeric features include search-volume context, competition, CPC, content length, log prior-month impressions/clicks/sessions, content age, and days since last update. Categorical features include competition level, content type, main intent, and age, freshness, and length tiers.</p>
+      <table>
+        <thead><tr><th>Design choice</th><th>Implementation</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>Label</td><td><code>trend_direction == "down"</code></td><td>A current-snapshot decline proxy, never an input feature</td></tr>
+          <tr><td>Baseline</td><td>50% prior visibility + 30% staleness + 20% content thinness</td><td>A transparent label-free comparator</td></tr>
+          <tr><td>Model</td><td>Random forest; 300 trees; class balancing; missingness-aware preprocessing</td><td>Captures non-linear combinations of safe features</td></tr>
+          <tr><td>Validation split</td><td><code>GroupShuffleSplit</code>, 20% test share, seed 42</td><td>All pages for seven clients are held out</td></tr>
+          <tr><td>Leakage check</td><td>Exclude label components, latest-window signals, 90-day totals/rates, IDs, and provider/model metadata</td><td>Keeps inputs separate from the outcome period</td></tr>
+        </tbody>
+      </table>
+      <p>The grouped split contains 23,837 training rows from 25 clients and 6,163 held-out rows from seven clients. This tests transfer to clients not observed during fitting rather than simple within-client pattern recovery.</p>
     </section>
 
     <section id="results">
-      <h2>3. Held-out results</h2>
-      <p>The table and chart below compare the learned model with the transparent baseline on exactly the same seven held-out clients (6,163 pages). The baseline produces 17 observed-decline pages among its first 50 recommendations; the model produces 27.</p>
+      <h2>4. Results</h2>
+      <p>The model and the transparent baseline were evaluated on exactly the same seven held-out clients. The model found 27 pages labelled <code>down</code> in its first 50 recommendations, compared with 17 for the baseline.</p>
       <div class="grid" aria-label="Key evaluation metrics">
         <div class="metric"><div class="value">0.511</div><div class="label">Held-out decline base rate</div></div>
         <div class="metric"><div class="value">0.340</div><div class="label">Baseline Precision@50</div></div>
@@ -109,45 +122,54 @@
       </table>
       <figure>
         <img src="assets/capstone_precision_at_50.png" alt="Bar chart comparing the held-out decline base rate, baseline Precision at 50, and model Precision at 50.">
-        <figcaption><strong>Figure 1.</strong> At a 50-page review capacity, the model’s measured Precision@50 is 0.540 versus 0.340 for the transparent baseline. The 0.511 base rate is shown to contextualise the result.</figcaption>
+        <figcaption><strong>Figure 1.</strong> At a 50-page review capacity, the model achieved Precision@50 of 0.540 versus 0.340 for the transparent baseline. The 0.511 base rate provides necessary context.</figcaption>
       </figure>
-    </section>
-
-    <section id="interpretation">
-      <h2>4. Interpretation</h2>
-      <p>Permutation importance on the held-out clients indicates that <strong>prior-month impressions</strong> contribute most to the model’s discrimination: permuting <code>log_impressions_prev_30d</code> decreases ROC-AUC by about 0.141. Prior-month clicks, content age, and prior-month sessions add much smaller incremental contributions.</p>
+      <p>Permutation importance on held-out clients shows that <strong>prior-month impressions</strong> contribute the most measured discrimination: permuting <code>log_impressions_prev_30d</code> reduces ROC-AUC by about 0.141. Prior-month clicks, content age, and prior-month sessions make much smaller incremental contributions. This measures model dependence in this split; it does not identify a causal mechanism of decline.</p>
       <figure>
         <img src="assets/capstone_feature_importance.png" alt="Horizontal bar chart of permutation feature importances on held-out clients.">
-        <figcaption><strong>Figure 2.</strong> Prior-month visibility dominates the measured feature-importance profile. This measures model dependence in this split; it does not identify a causal mechanism of decline.</figcaption>
+        <figcaption><strong>Figure 2.</strong> Prior-month visibility dominates the held-out feature-importance profile. Signals with near-zero or negative importance did not materially improve discrimination after prior-window visibility was included.</figcaption>
       </figure>
-      <p>Content type, search-volume context, and content-length measures had near-zero or negative permutation importance after the prior-window signals were included. That negative result is operationally useful: in this split, they did not materially improve discrimination beyond existing visibility and engagement context.</p>
     </section>
 
     <section id="limits">
       <h2>5. Limitations and honest framing</h2>
-      <div class="callout limitations"><strong>Interpret with care.</strong> The held-out decline base rate is 0.511, so 0.540 Precision@50 is only modestly above prevalence even though it substantially improves on the chosen baseline. The model identifies pages for review, not pages guaranteed to benefit from a refresh.</div>
+      <div class="callout limitations"><strong>Interpret with care.</strong> The held-out decline base rate is 0.511, so model Precision@50 of 0.540 is only modestly above prevalence even though it improves substantially on the selected transparent baseline. The model identifies pages for review, not pages guaranteed to benefit from a refresh.</div>
       <ul>
-        <li>The label describes an observed decline within the current snapshot; it does not establish a future traffic forecast.</li>
-        <li>The analysis cannot show that refreshing a page causes traffic to recover. A controlled intervention or causal design would be required.</li>
-        <li>One grouped client holdout is a useful transfer check but not a full multi-period or time-aware validation programme.</li>
-        <li>Permutation importance is associative, not causal; it describes what the model used in this evaluation split.</li>
+        <li>The label describes an observed movement within a snapshot; it is not a future traffic forecast.</li>
+        <li>The analysis cannot show that refreshing a page causes traffic to recover; that requires a controlled intervention or causal design.</li>
+        <li>One grouped client holdout is a transfer check, not a complete multi-period or time-aware validation programme.</li>
+        <li>Permutation importance is associative rather than causal and describes this specific evaluation split.</li>
       </ul>
     </section>
 
-    <section id="recommendation">
-      <h2>6. Recommendation</h2>
-      <p>An editor should review the first 50 entries in the generated queue, starting with pages that pair measurable prior visibility with an actionable issue such as staleness or short content. The appropriate recommendation is <strong>review for refresh</strong>, not automatic refresh. During review, the editor should inspect search intent, factual currency, query coverage, and on-page quality before changing a page.</p>
-      <p>The result is most useful as a consistent first-pass triage mechanism. The next research extension should use a forward outcome window from the full warehouse and a time-aware evaluation design to test whether the ranking predicts a subsequent decline rather than characterising the current snapshot.</p>
+    <section id="recommendations">
+      <h2>6. Ranked recommendations and action playbook</h2>
+      <p>The model creates a local ranked queue with a model score, baseline score, and non-label reason codes. To keep this public paper safe, page-level IDs and the ranked queue file are not published. The score is used to determine review order; it never triggers an automatic refresh.</p>
+      <table>
+        <thead><tr><th>Step</th><th>Editor action</th><th>Decision boundary</th></tr></thead>
+        <tbody>
+          <tr><td>1. Triage</td><td>Start with the first 50 pages ranked for <strong>review for refresh</strong></td><td>Rank is a queue position, not an editing instruction</td></tr>
+          <tr><td>2. Diagnose</td><td>Check intent, factual currency, query coverage, on-page quality, and technical context</td><td>Confirm an actionable issue before changing content</td></tr>
+          <tr><td>3. Choose action</td><td>Refresh, expand, rewrite, monitor, or defer according to the diagnosis</td><td>Not every observed decline needs a refresh</td></tr>
+          <tr><td>4. Record outcome</td><td>Log the decision and observe later performance</td><td>A time-aware or intervention study is needed to measure impact</td></tr>
+        </tbody>
+      </table>
+      <p>The next research extension should use a forward outcome window from the full warehouse with time-aware validation to test subsequent decline rather than characterising the current snapshot.</p>
     </section>
 
     <section id="reproduce">
-      <h2>7. Reproducibility and data credit</h2>
-      <p>The code, notebook, report, and generated figures are available in the <a href="https://github.com/UmerSajid842/flyrankmlproject">project repository</a>. The analysis uses fixed random seed <code>42</code> and reads only the bundled anonymised starter data.</p>
+      <h2>7. Reproducibility</h2>
+      <p>The executed notebook, report, analysis script, and aggregate evaluation artifacts are available in the <a href="https://github.com/UmerSajid842/flyrankmlproject">project repository</a>. The analysis fixes random seed <code>42</code>.</p>
       <pre><code>pip install -r requirements.txt
 python work/scripts/run_capstone.py</code></pre>
-      <p>This capstone uses the FlyRank ML Internship anonymised starter dataset. For the feature definitions and data-use context, see the repository’s <a href="https://github.com/UmerSajid842/flyrankmlproject/blob/main/docs/data-dictionary.md">data dictionary</a> and <a href="https://github.com/UmerSajid842/flyrankmlproject/blob/main/DATA_USE.md">data-use policy</a>.</p>
+      <p>The script reads only the bundled anonymised starter release and writes derived artifacts under <code>work/outputs/</code>. For feature definitions and data-use context, see the repository’s <a href="https://github.com/UmerSajid842/flyrankmlproject/blob/main/docs/data-dictionary.md">data dictionary</a> and <a href="https://github.com/UmerSajid842/flyrankmlproject/blob/main/DATA_USE.md">data-use policy</a>.</p>
+    </section>
+
+    <section id="acknowledgements">
+      <h2>8. Acknowledgements and data credit</h2>
+      <p>Built on the <a href="https://flyrank.ai">FlyRank ML Internship dataset</a>. This project uses the anonymised starter release only and follows the repository’s public-data restrictions. The FlyRank data dictionary and data-use policy informed the feature, leakage, and publication boundaries used here.</p>
     </section>
   </main>
-  <footer class="footer"><div class="footer-inner"><p><strong>Claims boundary:</strong> All findings here are observed, measured, directional, and for decision support only. They do not identify private clients, predict Google’s algorithm, or establish causal effects.</p></div></footer>
+  <footer class="footer"><div class="footer-inner"><p><strong>Claims boundary:</strong> All findings are observed, measured, directional, and for decision support only. They do not identify private clients, prove Google’s algorithm, establish causal effects, or guarantee content performance.</p></div></footer>
 </body>
 </html>

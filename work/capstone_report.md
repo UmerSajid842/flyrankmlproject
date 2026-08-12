@@ -1,85 +1,124 @@
-# Capstone Report — Leakage-Aware Content Decline Prioritization
+# Can Prior-Window Signals Improve Content Refresh Prioritisation?
 
-- **Author:** Umer Sajid
-- **Lane:** Content Refresh Prioritization
-- **Repo:** `UmerSajid842/flyrankmlproject`
-- **Date:** 2026-08-12
-
-> **Working title.** Prioritising visible, ageing content pages for refresh using leakage-aware prior-window and contextual signals.
+| Item | Detail |
+|---|---|
+| **Author** | Umer Sajid |
+| **Lane** | Refresh / Content Opportunity Scoring |
+| **Repository** | [UmerSajid842/flyrankmlproject](https://github.com/UmerSajid842/flyrankmlproject) |
+| **Date** | 12 August 2026 |
 
 ## Abstract
 
-This capstone asks whether an SEO or content editor can use page context and prior-month signals to prioritise a review queue for potentially declining content. It uses the repository's anonymised snapshot of 30,000 content pages across 32 pseudonymised clients and evaluates transfer to seven clients held out from training. A leakage-aware random-forest model uses only stable/contextual variables and preceding-30-day counts; it is compared with a transparent visibility, freshness, and content-thinness baseline. On the held-out clients, the model reached Precision@50 of 0.540 versus 0.340 for the baseline, but the 0.511 decline base rate makes this a modest prioritisation result rather than an automated-action threshold. The output is a human review queue for directional decision support, not a causal estimate, a traffic forecast beyond the snapshot, or a claim about Google's algorithm.
+This capstone asks whether an SEO or content editor can use page context and prior-month signals to prioritise a review queue for potentially declining content. It uses the bundled anonymised FlyRank ML Internship starter release, a 30,000-page snapshot across 32 pseudonymised clients, and evaluates transfer on seven entirely held-out clients. A leakage-aware random-forest model uses only stable or prior-window signals and is compared with a transparent visibility, freshness, and content-thinness baseline on the same test split. The model achieved **Precision@50 = 0.540** versus **0.340** for the baseline, although the held-out decline base rate of 0.511 means this is a modest prioritisation result rather than an automated-action threshold. The output is a ranked **review-for-refresh** queue for directional decision support, not a causal estimate, a guarantee of traffic recovery, or a claim about Google's algorithm.
 
-## 1. Problem framing
+## 1. Introduction and problem statement
 
-This project supports an **SEO or content editor** deciding which pages to investigate for a refresh first when the team has limited editorial capacity. The unit of analysis is one pseudonymised content page. The output is a ranked review queue rather than an autonomous action: a human editor reviews the highest-priority pages, diagnoses the cause, and chooses whether to refresh, monitor, or take another action. A wrong positive consumes editorial time; a wrong negative may leave a genuinely declining page unattended. The analysis uses machine learning because the decision depends on a combination of prior visibility, content age, freshness, content characteristics, and search-context signals that are difficult to combine consistently in a single fixed rule.
+Content teams commonly have more ageing pages than they can review in a single editorial cycle. This capstone supports one narrow operational decision: **which pages should an editor investigate first when refresh capacity is limited?** The unit of analysis is one pseudonymised content page, and the output is a ranked review queue rather than an automated intervention. A false positive consumes an editor's review time, while a false negative leaves a potentially declining page outside the first review batch.
 
-The target is an **observed current-snapshot decline proxy**: `trend_direction == "down"`, which means the most recent 30 days of impressions are more than 20% below the preceding 30 days. The primary prioritisation metric is **Precision@50** on held-out clients, reported alongside the held-out decline base rate. ROC-AUC and average precision are supplementary discrimination checks.
+The target is an **observed current-snapshot decline proxy**: `trend_direction == "down"`. In the starter release, this is defined when impressions in the most recent 30 days are more than 20% below the preceding 30 days. The primary success criterion is Precision@50 on held-out clients, reported alongside the held-out decline prevalence. ROC-AUC and average precision are supplementary discrimination metrics.
 
-## 2. Data safety
+## 2. Data and public-safety boundary
 
-The analysis uses only the repository's bundled anonymised data: 30,000 pseudonymised content pages across 32 pseudonymised clients. No names, URLs, titles, or private queries are present in this project. `content_id` and `client_id` are used only for output reference and grouped evaluation; they are never model features.
+The analysis uses the repository's **bundled anonymised starter release**: `data/raw/content_refresh_anonymized.csv`. It is one denormalised snapshot table with **30,000 content-page rows, 44 columns, and 32 pseudonymised clients**. All activity totals cover a trailing 90-day export window. For the trend comparison, `*_prev_30d` represents days 31–60 before export and `*_last_30d` represents the most recent 30 days. This project does **not** use the separate full warehouse release or any raw client export. [1]
 
-To prevent direct and time-window leakage, the model excludes `trend_direction`, `trend_pct`, `is_declining_label`, all `*_last_30d` columns, all 90-day traffic totals and derived rates, and the provider/model metadata. Those fields either define the outcome or overlap the outcome period. The predictive feature set is restricted to context and the **preceding** 30-day counts, plus content age/freshness. Numeric missing values are median-imputed with missingness indicators; categorical missing values form an explicit `missing` category rather than being silently treated as zero.
+| Data choice | Treatment in this capstone | Reason |
+|---|---|---|
+| Page and client identifiers | Used only for output reference and client-grouped evaluation; never model features | Avoids memorising pseudonymised identities |
+| Prior-window activity | Prior 30-day impressions, clicks, and sessions are eligible features | These measurements precede the target window |
+| Context and freshness | Search context, content length, content age, days since update, and categorical tiers are eligible | They are stable context or non-overlapping signals |
+| Latest-window activity | All `*_last_30d` fields are excluded | They overlap the label period |
+| Labels and label components | `trend_direction`, `trend_pct`, and `is_declining_label` are excluded | They directly define the outcome |
+| 90-day totals and derived rates | Excluded | They overlap the recent outcome period |
+| Provider and model metadata | Excluded | They are not meaningful decision inputs for this task |
 
-## 3. Baseline
+No client names, domains, live URLs, page titles, private queries, credentials, or raw exports are published. Missing numeric values are median-imputed with missingness indicators. Missing categorical values are represented as `missing`, so absent measurement is not silently converted into a genuine zero.
 
-The baseline is a transparent review-priority score, evaluated on the same held-out client set as the model:
+## 3. Methodology
+
+### Assumptions and feature policy
+
+The approach assumes that preceding-month visibility, freshness, content age, content characteristics, and safe search-context signals can help triage pages for review. It does **not** assume that these signals cause a decline or that a refresh will restore traffic. Numeric model inputs include search-volume context, competition, CPC, word and character counts, log-transformed prior-month impressions/clicks/sessions, content age, and days since last update. Categorical inputs include competition level, content type, main intent, and age, freshness, and length tiers.
+
+### Label, baseline, and model
+
+The label is the observed decline proxy `trend_direction == "down"`. The transparent baseline uses the following label-free score:
 
 `0.50 × percentile(log(1 + prior-month impressions)) + 0.30 × percentile(days since last update) + 0.20 × content thinness`.
 
-It is deliberately simple and label-free. It prioritises pages with meaningful recent visibility, stale content, and relatively low word count. The comparison asks whether the learned model identifies a larger share of current-snapshot declining pages among the first 50 pages reviewed.
+The learned comparator is a random-forest classifier with 300 trees, class balancing, median numeric imputation with missingness indicators, and one-hot encoding for categorical fields. Both approaches are evaluated on exactly the same held-out pages.
 
-## 4. Model / analysis
+### Validation and leakage checks
 
-The model is a random-forest classifier with 300 trees, class balancing, median numeric imputation with missingness indicators, and one-hot encoding for categorical features. It uses a single client-held-out split (`GroupShuffleSplit`, 20% test set, random seed 42). Grouping by client tests whether the prioritisation approach transfers to a client portfolio not seen during training rather than merely memorising client-level patterns.
+The validation design is a client-grouped holdout: `GroupShuffleSplit` holds out 20% of clients using random seed 42. This produces 25 training clients and seven held-out clients, containing 23,837 training rows and 6,163 held-out rows. Holding out complete clients tests transfer to a portfolio not observed during training. The feature policy excludes the label, its components, all recent-30-day signals, all 90-day totals/rates, IDs, and provider/model metadata before fitting.
 
-The exact features are saved to `work/outputs/capstone_metrics.json` on each run. Numeric inputs are search context, content length, log prior-month impressions/clicks/sessions, content age, and days since last update. Categorical inputs are competition level, content type, main intent, and the age/freshness/length tiers.
+## 4. Results
 
-## 5. Evaluation
+The analysis was freshly run with `python work/scripts/run_capstone.py` on the bundled anonymised release. The table compares the baseline and random forest on the **same seven held-out clients**.
 
-The analysis was freshly run with `python work/scripts/run_capstone.py` on the bundled 30,000-row anonymised dataset. The metric table below compares the baseline and model on the **same seven held-out clients** (6,163 pages).
-
-| Measure | Result from fresh run |
+| Measure | Result |
 |---|---:|
 | Held-out decline base rate | 0.511 |
 | Baseline Precision@50 | 0.340 |
-| Model Precision@50 | 0.540 |
+| Model Precision@50 | **0.540** |
 | Baseline Precision@100 | 0.340 |
-| Model Precision@100 | 0.460 |
+| Model Precision@100 | **0.460** |
 | Model ROC-AUC | 0.659 |
 | Model average precision | 0.616 |
 
-The model selects 27 pages labelled `down` among its first 50 versus 17 for the transparent baseline: a **20-percentage-point Precision@50 improvement** over that rule. However, the held-out decline base rate is already 0.511, so the 0.540 Precision@50 result is only modestly above the raw prevalence. The result is therefore a measured improvement over the selected baseline, not evidence of a high-confidence automated refresh decision.
+The model identifies 27 pages labelled `down` among its first 50 recommendations, compared with 17 for the transparent baseline. This is a 20-percentage-point improvement in Precision@50 over the selected baseline. However, Precision@50 is only slightly above the 0.511 test prevalence, so the result is a measured ranking improvement rather than evidence that the top-ranked pages should be refreshed automatically.
 
-The ranked queue contains a model score, transparent baseline score, and non-label reason codes. False positives are pages selected for review that are not labelled `down`; false negatives are declining pages outside the selected top 50. The output is a prioritisation aid, so a human review step remains mandatory.
+![Held-out comparison of the decline base rate, baseline Precision@50, and model Precision@50.](outputs/capstone_precision_at_50.png)
 
-## 6. Interpretation
+> **Figure 1.** At a 50-page review capacity, the model achieved Precision@50 of 0.540 versus 0.340 for the transparent baseline. The held-out base rate is displayed to put the result in context.
 
-On the held-out clients, **prior-month impressions** were by far the strongest measured signal: permuting `log_impressions_prev_30d` reduced ROC-AUC by about 0.141. Prior-month clicks (about 0.011), content age (about 0.009), and prior-month sessions (about 0.006) made substantially smaller contributions. In plain language, the model mostly distinguished current-snapshot decline using whether a page had an established measurable search footprint in the preceding month; older pages and prior engagement added limited incremental evidence.
+Permutation importance on held-out clients shows that `log_impressions_prev_30d` contributes the most measurable discrimination; permuting it reduces ROC-AUC by about 0.141. Prior-month clicks, content age, and prior-month sessions contribute much smaller incremental changes. This is a model-dependence result, not causal evidence that prior impressions produce a decline.
 
-Several intended contextual signals, including content type, search-volume context, and content-length measures, had near-zero or negative permutation importance in this split. This is a valid negative result: these features did not materially improve discrimination after the prior-window visibility measures were present. Permutation importance measures model dependence in this particular evaluation split; it does not show that any feature causes a decline.
+![Permutation feature importance measured as held-out ROC-AUC drop.](outputs/capstone_feature_importance.png)
 
-## 7. Recommendation
+> **Figure 2.** Prior-month visibility dominates the feature-importance profile in this held-out split. Contextual fields with near-zero or negative importance did not materially improve discrimination after prior-window visibility was included.
 
-A FlyRank editor should review the first 50 rows in `work/outputs/capstone_ranked_queue.csv`, beginning with entries whose reason codes show both meaningful prior visibility and a manageable content issue such as staleness or short content. The recommended action is **review for refresh**, not automatic refresh. Confidence is limited by the anonymous snapshot design, the proxy outcome, and the absence of a post-refresh experiment.
+## 5. Limitations and honest framing
 
-## 8. Reproducibility
+The target describes an observed within-snapshot movement, not a future traffic forecast. The data cannot show that refreshing a page causes traffic to recover; that claim would require a controlled intervention or causal design. A single client-grouped holdout is a useful transfer test, but it is not a full multi-period, time-aware validation programme. Finally, the held-out prevalence is high, so the model's improvement over prevalence is modest despite its clear improvement over the transparent baseline.
 
-From the repository root, install the project requirements and run:
+> **Claims boundary.** Findings in this capstone are **observed, measured, directional, and decision-support only**. They do not prove Google's ranking algorithm, identify private clients, establish causal refresh impact, or guarantee a recommendation outcome.
+
+## 6. Ranked recommendations and action playbook
+
+The model produces a local ranked queue with a model score, baseline score, and non-label reason codes. To keep the public paper safe, page-level IDs and the ranked queue file are not published. An editor using the internal queue should follow this action playbook:
+
+| Step | Editor action | Decision boundary |
+|---|---|---|
+| 1. Triage | Start with the first 50 pages ranked for **review for refresh** | The score determines review order, not an automatic content change |
+| 2. Diagnose | Check search intent, factual currency, query coverage, on-page quality, and technical context | Confirm an actionable issue before editing |
+| 3. Choose action | Refresh, expand, rewrite, monitor, or defer according to the diagnosis | Do not assume every observed decline needs a refresh |
+| 4. Record outcome | Log the chosen action and monitor subsequent performance | A later time-aware or intervention study is needed to measure impact |
+
+The immediate recommendation is therefore **review for refresh**, not auto-refresh. The most useful extension would build a forward outcome label from the full warehouse and evaluate it with time-aware splits.
+
+## 7. Reproducibility
+
+The code, executed notebook, report, and aggregate evaluation artifacts are available in the [project repository](https://github.com/UmerSajid842/flyrankmlproject). The run uses random seed `42` and can be reproduced from the repository root with:
 
 ```bash
 pip install -r requirements.txt
 python work/scripts/run_capstone.py
 ```
 
-The analysis uses random seed `42`. It reads only `data/raw/content_refresh_anonymized.csv` and writes derived artifacts to `work/outputs/`, which should remain uncommitted. Re-run it after any feature or model change before updating the metric table above.
+The script reads only `data/raw/content_refresh_anonymized.csv` and writes derived artifacts under `work/outputs/`. Re-run it after changing features or modeling choices, then update the metric table and figures. The public paper source is `docs/index.html` and is designed for GitHub Pages deployment.
 
-## Acknowledgements and data credit
+## 8. Acknowledgements and data credit
 
-This project uses the anonymised FlyRank ML Internship starter dataset supplied with this repository. The source includes 30,000 pseudonymised content pages and contains no client names, domains, URLs, titles, or private queries. The project follows the repository's `DATA_USE.md` restrictions and its data dictionary, and it credits the FlyRank ML Internship repository as the technical and data foundation.
+Built on the [FlyRank ML Internship dataset](https://flyrank.ai) and the accompanying repository data dictionary and data-use policy. The project uses only the anonymised starter release and follows the public-data restrictions in `DATA_USE.md`.
+
+## References
+
+[1] [FlyRank ML Internship, *Data dictionary*](https://github.com/UmerSajid842/flyrankmlproject/blob/main/docs/data-dictionary.md).
+
+[2] [FlyRank, *ML Internship dataset and data-use policy*](https://flyrank.ai).
+
+[3] [FlyRank ML Internship repository, *DATA_USE.md*](https://github.com/UmerSajid842/flyrankmlproject/blob/main/DATA_USE.md).
 
 ---
 
-> **Claims boundary:** All findings in this report are **observed, measured, directional, and decision-support only**. They do not predict Google's algorithm, establish causality, or identify private clients.
+> This report is a public-safe account of the capstone. It contains aggregate evaluation results only and intentionally excludes page-level ranked recommendations and other potentially identifying output artifacts.
