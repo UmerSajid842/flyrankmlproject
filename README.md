@@ -7,6 +7,28 @@ repo** (one click — *Use this template*), build everything there, and submit t
 each assignment in your portal — it's your workspace, your submission, and your portfolio all
 at once. The rhythm is simple: do the work, commit it, submit on the card. Done.
 
+## My Work in This Repository
+
+I completed the capstone in `work/` as part of the FlyRank ML Internship. My work addresses a focused operational question: when an editor has limited capacity, which content pages should be reviewed first for a possible refresh? I built a leakage-aware feature policy, excluded identifiers and overlapping outcome-window fields, compared a transparent baseline with a random-forest model, and evaluated transfer to completely held-out clients.
+
+Using the bundled public-safe anonymized release, the capstone evaluated 30,000 page rows across 32 pseudonymized clients. On a seven-client grouped holdout, the model achieved Precision@50 of 0.540 compared with 0.340 for the transparent baseline. The output is a review-prioritization queue for directional decision support—not an automated content-refresh system, a causal estimate, or a claim about Google’s ranking algorithm.
+
+### My Contributions
+
+| Contribution | Evidence |
+|---|---|
+| Problem framing | `work/capstone_report.md` defines the review-for-refresh decision and intended user. |
+| Data safety | `DATA_USE.md`, the feature policy, and the public-safe anonymized dataset boundary. |
+| Leakage prevention | Exclusion of label-derived fields, recent-window signals, identifiers, and overlapping totals. |
+| Validation | Client-grouped holdout with seven completely held-out clients. |
+| Modeling | Transparent baseline compared with a class-balanced random-forest pipeline. |
+| Evaluation | Precision@50, Precision@100, ROC-AUC, average precision, feature importance, and limitations. |
+| Reproducibility | `python work/scripts/run_capstone.py`. |
+
+### Recruiter Summary
+
+This project demonstrates applied machine-learning practice beyond model fitting: translating a business decision into a measurable target, defining a safe feature boundary, checking leakage, validating transfer across client groups, reporting uncertainty and limitations, and turning predictions into an editor-facing action playbook.
+
 Everything here runs on a small **anonymized** slice of real FlyRank search data. No credentials,
 no private client data, no setup headaches.
 
